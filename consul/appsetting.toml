@@ -1,0 +1,7 @@
+[ConfigService]
+Appid="doctor-api"
+Address="192.168.254.51:11111"
+
+[LogService]
+Appid="doctor-api"
+Address=""
