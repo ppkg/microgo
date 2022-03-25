@@ -3,6 +3,7 @@ package gin
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/ppkg/microgo/consul"
 	"github.com/ppkg/microgo/sys"
@@ -27,13 +28,21 @@ func (e *engine) Start() {
 	if l, err := net.Listen("tcp", fmt.Sprintf(":%d", *e.opt.HttpPort)); err != nil {
 		glog.Error(err)
 	} else {
-		// 注册所有集群
-		consul.RegisterHttpService(e.opt, l)
+		go func() {
+			for *e.opt.HttpPort == 0 {
+				*e.opt.HttpPort = l.Addr().(*net.TCPAddr).Port
+				time.Sleep(time.Second)
+			}
 
-		// 注册为每个单机的模式，用于灰度控制
-		o := *e.opt
-		o.Name += "-" + o.Address
-		consul.RegisterHttpService(&o, l)
+			// 注册所有集群
+			consul.RegisterHttpService(e.opt)
+
+			// 注册为每个单机的模式，用于灰度控制
+			o := *e.opt
+			o.Name += "-" + o.Address
+			consul.RegisterHttpService(&o)
+		}()
+		
 		err := e.ge.RunListener(l)
 		if err != nil {
 			glog.Error("gin start error", err)

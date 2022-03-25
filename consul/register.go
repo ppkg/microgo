@@ -72,39 +72,18 @@ func RegisterGrpcService(listen ...net.Listener) {
 }
 
 // 注册consul http
-func RegisterHttpService(opt *sys.Options, listen ...net.Listener) {
+func RegisterHttpService(opt *sys.Options) {
 	var is_pprof bool
+	var port int
 	for _, v := range opt.Tags {
 		if is_pprof = v == "pprof"; is_pprof {
+			port = *opt.PprofPort
 			break
 		}
 	}
-
-	var port int
-	if len(listen) == 1 {
-		port = listen[0].Addr().(*net.TCPAddr).Port
-		if is_pprof {
-			*opt.PprofPort = port
-		} else {
-			*opt.HttpPort = port
-		}
-	} else {
-		if is_pprof {
-			for *opt.PprofPort == 0 {
-				glog.Info("pprof port ", *opt.HttpPort)
-				time.Sleep(time.Second * 1)
-			}
-			port = *opt.PprofPort
-		} else {
-			for *opt.HttpPort == 0 {
-				glog.Info("http port ", *opt.HttpPort)
-				time.Sleep(time.Second * 1)
-			}
-			port = *opt.HttpPort
-		}
+	if !is_pprof {
+		port = *opt.HttpPort
 	}
-
-	glog.Info("port", port)
 
 	config := api.DefaultConfig()
 	config.Address = opt.ConsulAddress
@@ -118,9 +97,10 @@ func RegisterHttpService(opt *sys.Options, listen ...net.Listener) {
 	reg.Name = opt.Name
 	reg.Port = port
 	reg.Address = opt.Address
-
 	reg.Tags = append(reg.Tags, "http", opt.Address)
 	reg.Tags = append(reg.Tags, opt.Tags...)
+
+	glog.Info(reg.ID)
 
 	check := new(api.AgentServiceCheck)
 	check.HTTP = fmt.Sprintf("http://%s:%d/ping", reg.Address, reg.Port)
@@ -138,11 +118,12 @@ func RegisterHttpService(opt *sys.Options, listen ...net.Listener) {
 		}
 	}
 	//注册Apache APISIX ConsulKV服务发现
-	PutUpstreamsToConsulKV(opt)
+	PutUpstreamsToConsulKV(opt.Name, port)
 }
 
 // apache APISIX ConsulKV 服务发现
-func PutUpstreamsToConsulKV(opt *sys.Options) {
+func PutUpstreamsToConsulKV(name string, port int) {
+	opt := sys.GetOption()
 	consulConfig := api.DefaultConfig()
 	consulConfig.Address = opt.ConsulAddress
 	client, err := api.NewClient(consulConfig)
@@ -152,7 +133,7 @@ func PutUpstreamsToConsulKV(opt *sys.Options) {
 	}
 
 	// 删除旧K
-	k := fmt.Sprintf("upstreams/%s/%s:", opt.Name, opt.Address)
+	k := fmt.Sprintf("upstreams/%s/%s:", name, opt.Address)
 	s, _, _ := client.KV().Keys(k, "", nil)
 	for _, v := range s {
 		for {
@@ -168,7 +149,7 @@ func PutUpstreamsToConsulKV(opt *sys.Options) {
 
 	// 加入新K
 	kv := api.KVPair{
-		Key:   fmt.Sprintf("upstreams/%s/%s:%d", opt.Name, opt.Address, *opt.HttpPort),
+		Key:   fmt.Sprintf("upstreams/%s/%s:%d", name, opt.Address, port),
 		Value: []byte(`{"weight": 1, "max_fails": 2, "fail_timeout": 3}`),
 	}
 	for {
