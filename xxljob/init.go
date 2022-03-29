@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/ppkg/microgo/ctx"
+	"github.com/ppkg/microgo/grpc/conn"
 	"github.com/ppkg/microgo/sys"
 
 	"github.com/maybgit/glog"
@@ -25,7 +25,7 @@ func AddTask(jobName string, jobFunc func(ctx context.Context, param *RunReq) (m
 		glog.Error(jobName, "duplicate definition")
 	} else {
 		jobs[jobName] = func(cxt context.Context, param *RunReq) (msg string) {
-			cxt, _ = ctx.GetCtx(cxt)
+			cxt, _ = conn.GetCtx(cxt)
 			return jobFunc(cxt, param)
 		}
 		glog.Info("xxljob.AddTask", jobName)

@@ -1,4 +1,4 @@
-package ctx
+package conn
 
 import (
 	"context"
@@ -6,15 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
-
-type Ctx struct {
-	Conn *grpc.ClientConn
-	Ctx  context.Context
-	Cf   context.CancelFunc
-}
 
 func GetCtx(ctx ...interface{}) (context.Context, context.CancelFunc) {
 	requestId := uuid.New().String()
