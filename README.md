@@ -4,7 +4,7 @@ microservices for go
 package main
 
 import (
-	"_/common/proto/pb/system"
+	"_/common/proto/pb/system" // you pb file package path
 	"_/services"
 	"flag"
 	_ "net/http/pprof"
