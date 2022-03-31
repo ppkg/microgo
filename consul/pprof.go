@@ -29,7 +29,7 @@ func RegisterPprof() {
 			// 注册集群模式
 			RegisterHttpService(&sys.Options{
 				ConsulAddress: opt.ConsulAddress,
-				Address:       opt.Address,
+				LocalIP:       opt.LocalIP,
 				Name:          name,
 				Tags:          []string{"pprof"},
 				HttpPort:      new(int),
@@ -39,8 +39,8 @@ func RegisterPprof() {
 			// 注册单机模式
 			RegisterHttpService(&sys.Options{
 				ConsulAddress: opt.ConsulAddress,
-				Address:       opt.Address,
-				Name:          fmt.Sprintf("%s-pprof-%s", opt.Name, opt.Address),
+				LocalIP:       opt.LocalIP,
+				Name:          fmt.Sprintf("%s-pprof-%s", opt.Name, opt.LocalIP),
 				Tags:          []string{"pprof"},
 				HttpPort:      new(int),
 				PprofPort:     opt.PprofPort,

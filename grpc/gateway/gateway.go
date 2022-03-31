@@ -62,18 +62,6 @@ func Run(ctx context.Context, handler ...func(ctx context.Context, mux *runtime.
 	opt.Name += "-gw"
 	opt.Tags = opt.Tags[0:0]
 	consul.RegisterHttpService(&opt)
-	go func() {
-		time.Sleep(time.Second * 3)
-		opt := sys.GetOption()
-		glog.Info("service name     :", opt.Name)
-		glog.Info("service address  :", opt.Address)
-		glog.Info("consul address   :", opt.ConsulAddress)
-		glog.Info("http port        :", *opt.HttpPort)
-		glog.Info("grpc port        :", *opt.GrpcPort)
-		glog.Info("pprof port       :", *opt.PprofPort)
-		glog.Info("xxljob address   :", opt.XxljobAddress)
-		glog.Info("xxljob port      :", *opt.XxljobPort)
-	}()
 	if err := http.Serve(l, allowCORS(mux)); err != nil {
 		glog.Error(err)
 		panic(err)

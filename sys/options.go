@@ -1,6 +1,8 @@
 package sys
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ppkg/microgo/utils"
@@ -20,7 +22,7 @@ var (
 type Options struct {
 	Name          string //service name
 	ConsulAddress string //consul server address
-	Address       string //service address(default auto)
+	LocalIP       string //local ip address
 	HttpPort      *int   //http port default 0 dynamic
 	GrpcPort      *int   //grpc port default 0 dynamic
 	PprofPort     *int   //pprof port
@@ -48,16 +50,31 @@ func Init(o *Options) {
 		}
 	}
 
-	if o.Address == "" {
-		o.Address = utils.GetIp()
-		if o.Address == "" {
+	if o.LocalIP == "" {
+		o.LocalIP = utils.GetIp()
+		if o.LocalIP == "" {
 			glog.Error("get local ip error")
 		} else {
-			glog.Info("local ip address", o.Address)
+			glog.Info("local ip address", o.LocalIP)
 		}
 	}
 
 	_opt = o
+
+	go func() {
+		time.Sleep(time.Second * 3)
+		var sb strings.Builder
+		sb.WriteString("\nservice name     : " + _opt.Name)
+		sb.WriteString("\nlocal ip         : " + _opt.LocalIP)
+		sb.WriteString("\nconsul address   : " + _opt.ConsulAddress)
+		sb.WriteString("\nhttp port        : " + strconv.Itoa(*_opt.HttpPort))
+		sb.WriteString("\ngrpc port        : " + strconv.Itoa(*_opt.GrpcPort))
+		sb.WriteString("\npprof port       : " + strconv.Itoa(*_opt.PprofPort))
+		sb.WriteString("\nxxljob address   : " + _opt.XxljobAddress)
+		sb.WriteString("\nxxljob port      : " + strconv.Itoa(*_opt.XxljobPort))
+		sb.WriteString("\n")
+		glog.Info(sb.String())
+	}()
 }
 
 func (o *Options) Init() {

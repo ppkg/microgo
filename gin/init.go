@@ -39,7 +39,7 @@ func (e *engine) Start() {
 
 			// 注册为每个单机的模式，用于灰度控制
 			o := *e.opt
-			o.Name += "-" + o.Address
+			o.Name += "-" + o.LocalIP
 			consul.RegisterHttpService(&o)
 		}()
 		

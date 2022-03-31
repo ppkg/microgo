@@ -63,7 +63,7 @@ func (c *consulResolver) start() {
 				glog.Info("sys.GlobalConfig.HdRelease", sys.GlobalConfig.HdRelease)
 				cfg := sys.GetOption()
 				for _, v := range rs.Addresses {
-					if strings.HasPrefix(v.Addr, cfg.Address) {
+					if strings.HasPrefix(v.Addr, cfg.LocalIP) {
 						c.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: v.Addr, ServerName: v.ServerName}}})
 						break
 					}
@@ -103,6 +103,7 @@ func watcher(serviceName, consulAddr string) {
 	// 服务发现只查有grpc tag的服务
 	tags["grpc"] = "grpc"
 
+	opt := sys.GetOption()
 	for {
 		// 以闭包方式执行，recover有错的保证协程不退出
 		func() {
@@ -139,10 +140,13 @@ func watcher(serviceName, consulAddr string) {
 				lastIndex = meta.LastIndex
 				var sta resolver.State
 				for _, v := range entry {
-					// 兼容本地 network host Docker Desktop 通信
-					if runtime.GOOS == "windows" && strings.HasPrefix(v.Service.Address, "172.") {
+					// 兼容本地 Docker Desktop 通信
+					// 如果在windows运行项目，通过consul发现的地址，ip地址不是本机的，则此地址可能是Docker Desktop启动的服务注册的
+
+					if runtime.GOOS == "windows" && v.Service.Address != opt.LocalIP {
 						v.Service.Address = "127.0.0.1"
 					}
+
 					sta.Addresses = append(sta.Addresses, resolver.Address{
 						Addr:       fmt.Sprintf("%s:%d", v.Service.Address, v.Service.Port),
 						ServerName: v.Service.Service,

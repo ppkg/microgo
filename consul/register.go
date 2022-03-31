@@ -50,17 +50,17 @@ func RegisterGrpcService(listen ...net.Listener) {
 	deregister := time.Second * 300
 
 	reg := &api.AgentServiceRegistration{
-		ID:      fmt.Sprintf("%v-%v:%v", opt.Name, opt.Address, *opt.GrpcPort),
+		ID:      fmt.Sprintf("%v-%v:%v", opt.Name, opt.LocalIP, *opt.GrpcPort),
 		Name:    opt.Name,
 		Port:    *opt.GrpcPort,
-		Address: opt.Address,
+		Address: opt.LocalIP,
 		Check: &api.AgentServiceCheck{
 			Interval:                       interval.String(),
-			GRPC:                           fmt.Sprintf("%v:%v/%v", opt.Address, *opt.GrpcPort, opt.Name),
+			GRPC:                           fmt.Sprintf("%v:%v/%v", opt.LocalIP, *opt.GrpcPort, opt.Name),
 			DeregisterCriticalServiceAfter: deregister.String(),
 		},
 	}
-	reg.Tags = append(reg.Tags, "grpc", opt.Address)
+	reg.Tags = append(reg.Tags, "grpc", opt.LocalIP)
 	reg.Tags = append(reg.Tags, opt.Tags...)
 
 	if err := agent.ServiceRegister(reg); err != nil {
@@ -93,11 +93,11 @@ func RegisterHttpService(opt *sys.Options) {
 	}
 
 	reg := new(api.AgentServiceRegistration)
-	reg.ID = fmt.Sprintf("%v-%v:%v", opt.Name, opt.Address, port)
+	reg.ID = fmt.Sprintf("%v-%v:%v", opt.Name, opt.LocalIP, port)
 	reg.Name = opt.Name
 	reg.Port = port
-	reg.Address = opt.Address
-	reg.Tags = append(reg.Tags, "http", opt.Address)
+	reg.Address = opt.LocalIP
+	reg.Tags = append(reg.Tags, "http", opt.LocalIP)
 	reg.Tags = append(reg.Tags, opt.Tags...)
 
 	glog.Info(reg.ID)
@@ -133,7 +133,7 @@ func PutUpstreamsToConsulKV(name string, port int) {
 	}
 
 	// 删除旧K
-	k := fmt.Sprintf("upstreams/%s/%s:", name, opt.Address)
+	k := fmt.Sprintf("upstreams/%s/%s:", name, opt.LocalIP)
 	s, _, _ := client.KV().Keys(k, "", nil)
 	for _, v := range s {
 		for {
@@ -149,7 +149,7 @@ func PutUpstreamsToConsulKV(name string, port int) {
 
 	// 加入新K
 	kv := api.KVPair{
-		Key:   fmt.Sprintf("upstreams/%s/%s:%d", name, opt.Address, port),
+		Key:   fmt.Sprintf("upstreams/%s/%s:%d", name, opt.LocalIP, port),
 		Value: []byte(`{"weight": 1, "max_fails": 2, "fail_timeout": 3}`),
 	}
 	for {
