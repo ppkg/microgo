@@ -84,7 +84,7 @@ func action(uri string, httpMethod string, contentType string, param map[string]
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
 	// 生成jwt token
-	tokenStr, _ := token.SignedString(utils.PrivateKey)
+	tokenStr, _ := token.SignedString("utils.PrivateKey") //TODO KEY
 
 	req.Header.Add("Authorization", "bearer "+tokenStr)
 

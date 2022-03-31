@@ -274,7 +274,7 @@ func (e *executor) idleBeat(writer http.ResponseWriter, request *http.Request) {
 func (e *executor) registry() {
 	// 如果是动态端口的话，需要等待
 	for *e.opts.ExecutorPort == 0 {
-		glog.Info("等待执行器动态端口")
+		glog.Info("wait executor port...")
 		time.Sleep(time.Second)
 	}
 
