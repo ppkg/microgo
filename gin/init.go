@@ -7,6 +7,7 @@ import (
 
 	"github.com/ppkg/microgo/consul"
 	"github.com/ppkg/microgo/sys"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -42,7 +43,7 @@ func (e *engine) Start() {
 			o.Name += "-" + o.LocalIP
 			consul.RegisterHttpService(&o)
 		}()
-		
+
 		err := e.ge.RunListener(l)
 		if err != nil {
 			glog.Error("gin start error", err)
@@ -69,17 +70,20 @@ func (e *engine) Middlewares(middleware ...gin.HandlerFunc) *engine {
 
 func Init() *engine {
 	opt := sys.GetOption()
-	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
-		glog.Infof("%v %v %v %v", httpMethod, absolutePath, handlerName, nuHandlers)
-	}
 
 	e := engine{
 		ge:  gin.New(),
 		opt: opt,
 	}
+
+	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+		glog.Infof("%v %v %v %v", httpMethod, absolutePath, handlerName, nuHandlers)
+	}
+
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
+	e.ge.Use(otelgin.Middleware(opt.Name))
 	e.ge.Use(cors.New(config))
 	e.ge.Use(Recover)
 	e.ge.Use(PreHandler())

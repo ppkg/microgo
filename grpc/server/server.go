@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 func Run(ctx context.Context, f func(*grpc.Server)) {
@@ -37,7 +38,11 @@ func Run(ctx context.Context, f func(*grpc.Server)) {
 	if *opt.GrpcPort == 0 {
 		*opt.GrpcPort = l.Addr().(*net.TCPAddr).Port
 	}
-	s := grpc.NewServer(grpc.UnaryInterceptor(filter))
+	s := grpc.NewServer(
+		// grpc.UnaryInterceptor(filter),
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+	)
 	// s := grpc.NewServer(grpc.UnaryInterceptor(
 	// 	grpc_auth.UnaryServerInterceptor(func(ctx context.Context) (context.Context, error) {
 	// 		// return ctx,errors.New("not auth")

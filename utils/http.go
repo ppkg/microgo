@@ -6,12 +6,9 @@ import (
 	"time"
 )
 
-var HttpDefaultClient *http.Client
-var HttpClient *http.Client
-
-func init() {
+var (
 	HttpDefaultClient = http.DefaultClient
-	HttpClient = &http.Client{
+	HttpClient        = &http.Client{
 		Timeout: time.Second * 60,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -19,4 +16,4 @@ func init() {
 			},
 		},
 	}
-}
+)

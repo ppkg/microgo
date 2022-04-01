@@ -1,6 +1,7 @@
 package sys
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"time"
@@ -30,8 +31,12 @@ type Options struct {
 	XxljobAddress string //xxljob manager address
 	XxljobPort    *int   //xxljob execute port
 
+	JaegerEndpoint string
+
 	Tags []string
 	Mux  []gwruntime.ServeMuxOption
+
+	Ctx context.Context
 }
 
 func Init(o *Options) {
