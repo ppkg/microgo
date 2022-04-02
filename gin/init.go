@@ -84,7 +84,9 @@ func Init() *engine {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
-	e.ge.Use(otelgin.Middleware(opt.Name, otelgin.WithTracerProvider(otel.GetTracerProvider())))
+	tp := otel.GetTracerProvider()
+	fmt.Println(tp == nil)
+	e.ge.Use(otelgin.Middleware(opt.Name, otelgin.WithTracerProvider(tp)))
 	e.ge.Use(cors.New(config))
 	e.ge.Use(Recover)
 	e.ge.Use(PreHandler())
