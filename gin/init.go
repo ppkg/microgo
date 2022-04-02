@@ -7,6 +7,7 @@ import (
 
 	"github.com/ppkg/microgo/consul"
 	"github.com/ppkg/microgo/sys"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -82,7 +83,7 @@ func Init() *engine {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
-	// e.ge.Use(otelgin.Middleware(opt.Name))
+	e.ge.Use(otelgin.Middleware(opt.Name))
 	e.ge.Use(cors.New(config))
 	e.ge.Use(Recover)
 	e.ge.Use(PreHandler())
