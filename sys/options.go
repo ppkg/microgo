@@ -40,7 +40,6 @@ type Options struct {
 }
 
 func Init(o *Options) {
-	o.ConsulAddress = *consulAddress
 	o.GrpcPort = grpcPort
 	o.HttpPort = httpPort
 	o.PprofPort = pprofPort
@@ -51,7 +50,11 @@ func Init(o *Options) {
 		if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
 			o.ConsulAddress = "127.0.0.1:8500"
 		} else {
-			panic("consul address is empty")
+			if *consulAddress == "" {
+				panic("consul address is empty")
+			} else {
+				o.ConsulAddress = *consulAddress
+			}
 		}
 	}
 
