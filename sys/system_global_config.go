@@ -13,6 +13,7 @@ type SystemGlobalConfig struct {
 }
 
 func init() {
+	return //TODO
 	// watch 服务配置
 	go func() {
 		var lastIndex uint64
