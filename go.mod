@@ -13,15 +13,27 @@ require (
 	github.com/maybgit/glog v0.0.0-20220118085313-5fbe11e2f392
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
 	github.com/swaggo/gin-swagger v1.4.1
+	github.com/uptrace/opentelemetry-go-extra/otelgorm v0.1.11
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.31.0
 	go.opentelemetry.io/otel v1.6.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.6.1
 	go.opentelemetry.io/otel/sdk v1.6.1
 	google.golang.org/genproto v0.0.0-20220329172620-7be39ac1afc7
 	google.golang.org/grpc v1.45.0
+	gorm.io/driver/mysql v1.3.3
+	gorm.io/gorm v1.23.4
 )
 
-require go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.31.0 // indirect
+require github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+
+require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/uptrace/opentelemetry-go-extra/otelsql v0.1.11 // indirect
+	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.31.0
+	go.opentelemetry.io/otel/metric v0.28.0 // indirect
+)
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect

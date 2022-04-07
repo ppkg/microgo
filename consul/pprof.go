@@ -14,6 +14,10 @@ import (
 // 启动 pprof性能分析，把端口注册到consul
 func RegisterPprof() {
 	opt := sys.GetOption()
+	if opt.PprofDisable {
+		return
+	}
+
 	if l, err := net.Listen("tcp", fmt.Sprintf(":%d", *opt.PprofPort)); err != nil {
 		glog.Error(err)
 	} else {

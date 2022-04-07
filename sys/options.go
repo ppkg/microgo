@@ -27,6 +27,7 @@ type Options struct {
 	HttpPort      *int   //http port default 0 dynamic
 	GrpcPort      *int   //grpc port default 0 dynamic
 	PprofPort     *int   //pprof port
+	PprofDisable  bool   //disable pprof
 
 	XxljobAddress string //xxljob manager address
 	XxljobPort    *int   //xxljob execute port
@@ -39,7 +40,7 @@ type Options struct {
 	Ctx context.Context
 }
 
-func Init(o *Options) {
+func Set(o *Options) {
 	o.GrpcPort = grpcPort
 	o.HttpPort = httpPort
 	o.PprofPort = pprofPort
@@ -83,16 +84,16 @@ func Init(o *Options) {
 		sb.WriteString("\n")
 		glog.Info(sb.String())
 	}()
+
+	initTracerProvider()
+	// consul.RegisterPprof()
 }
 
 func (o *Options) Init() {
-	Init(o)
+	Set(o)
 }
 
-func GetOption(opts ...Options) *Options {
-	if len(opts) == 1 {
-		opts[0].Init()
-	}
+func GetOption() *Options {
 	for _opt == nil {
 		glog.Info("wait options init...")
 		time.Sleep(time.Second)

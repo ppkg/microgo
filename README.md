@@ -10,7 +10,6 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/ppkg/microgo/consul"
-	"github.com/ppkg/microgo/grpc/server"
 	"github.com/ppkg/microgo/sys"
 
 	"github.com/maybgit/glog"

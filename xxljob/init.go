@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/ppkg/microgo/grpc/conn"
+	"github.com/ppkg/microgo/conn"
 	"github.com/ppkg/microgo/sys"
 
 	"github.com/maybgit/glog"
