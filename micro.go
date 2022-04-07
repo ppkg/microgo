@@ -44,7 +44,6 @@ func (s *Micro) Run(fn interface{}, middleware ...interface{}) {
 	case func(r *gin.RouterGroup):
 		ginfw.Run(v, ginHandler...)
 	case func(s *grpc.Server):
-		fmt.Println(s.gs == nil)
 		s.gs.runServerAndGateway(v, grpcHandler...)
 	}
 }

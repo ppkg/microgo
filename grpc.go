@@ -168,7 +168,6 @@ func (g *grpcServer) runServer(ctx context.Context, f func(*grpc.Server)) {
 }
 
 func (g *grpcServer) runServerAndGateway(f func(s *grpc.Server), handler ...func(ctx context.Context, mux *gwruntime.ServeMux, conn *grpc.ClientConn) error) {
-	fmt.Println("g == nil",g == nil)
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
