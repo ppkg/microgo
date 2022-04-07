@@ -2,7 +2,6 @@ package microgo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -12,15 +11,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Micro struct {
-	gs *grpcServer
-}
+type Micro struct {}
 
 func Init(opt *sys.Options) *Micro {
 	sys.Set(opt)
-	return &Micro{
-		gs: &grpcServer{},
-	}
+	return &Micro{}
 }
 
 func (s *Micro) Run(fn interface{}, middleware ...interface{}) {
@@ -44,6 +39,6 @@ func (s *Micro) Run(fn interface{}, middleware ...interface{}) {
 	case func(r *gin.RouterGroup):
 		ginfw.Run(v, ginHandler...)
 	case func(s *grpc.Server):
-		s.gs.runServerAndGateway(v, grpcHandler...)
+		runServerAndGateway(v, grpcHandler...)
 	}
 }

@@ -1,36 +1,36 @@
 # microgo
 microservices for go
+
+gin http server
 ```
-package main
-
-import (
-	"_/common/proto/pb/system" // you pb file package path
-	"_/services"
-	"flag"
-	_ "net/http/pprof"
-
-	"github.com/ppkg/microgo/consul"
-	"github.com/ppkg/microgo/sys"
-
-	"github.com/maybgit/glog"
-	"google.golang.org/grpc"
-)
-
 func main() {
 	flag.Parse()
 	defer glog.Flush()
 
-	sys.Init(&sys.Options{
-		Name: "system-service",
+	microgo.Init(&sys.Options{
+		Name:           "grpc-gin-empty",
+		JaegerEndpoint: "http://10.11.32.165:14268/api/traces",
+	}).Run(func(r *gin.RouterGroup) {
+		r.GET("/test", api.Test)
+		r.POST("/test", api.Test)
 	})
+}
+```
+grpc server
+```
+func main() {
+	flag.Parse()
+	defer glog.Flush()
 
-	consul.RegisterPprof()
-	server.RunServerAndGateway(
-		func(s *grpc.Server) {
-			system.RegisterSystemServer(s, &services.System{})
-		},
-		system.RegisterSystemHandler,
-	)
+	//初始化定时任务，先加任务后执行定时任务
+	tasks.InitTask()
+
+	microgo.Init(&sys.Options{
+		Name:           "order-service",
+		JaegerEndpoint: "http://10.11.32.165:14268/api/traces",
+	}).Run(func(s *grpc.Server) {
+		order.RegisterOrderServer(s, &services.Order{})
+	}, order.RegisterOrderHandler)
 }
 
 ```

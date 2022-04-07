@@ -17,6 +17,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/metadata"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -29,16 +30,16 @@ import (
 
 type grpcServer struct{}
 
-func (g *grpcServer) runGateway(ctx context.Context, handler ...func(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error) {
+func runGateway(ctx context.Context, handler ...func(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error) {
 	opts := sys.GetOption()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	conn, f := g.dial(ctx, opts.GrpcPort)
+	conn, f := dial(ctx, opts.GrpcPort)
 	defer f()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/swagger/", g.serveSwaggerUi)
+	mux.HandleFunc("/swagger/", serveSwaggerUi)
 	mux.HandleFunc("/ping", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "text/plain")
 		if s := conn.GetState(); s != connectivity.Ready {
@@ -72,19 +73,19 @@ func (g *grpcServer) runGateway(ctx context.Context, handler ...func(ctx context
 	opt.Name += "-gw"
 	opt.Tags = opt.Tags[0:0]
 	consul.RegisterHttpService(&opt)
-	if err := http.Serve(l, g.allowCORS(mux)); err != nil {
+	if err := http.Serve(l, allowCORS(mux)); err != nil {
 		glog.Error(err)
 		panic(err)
 	}
 }
 
-func (g *grpcServer) serveSwaggerUi(w http.ResponseWriter, r *http.Request) {
+func serveSwaggerUi(w http.ResponseWriter, r *http.Request) {
 	p := strings.TrimPrefix(r.URL.Path, "/swagger/")
 	p = path.Join("static/swagger-ui/", p)
 	http.ServeFile(w, r, p)
 }
 
-func (g *grpcServer) allowCORS(h http.Handler) http.Handler {
+func allowCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origin := r.Header.Get("Origin"); origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -97,7 +98,7 @@ func (g *grpcServer) allowCORS(h http.Handler) http.Handler {
 	})
 }
 
-func (g *grpcServer) preflightHandler(w http.ResponseWriter, r *http.Request) {
+func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	headers := []string{"Content-Type", "Accept", "Authorization"}
 	w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
 	methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
@@ -105,7 +106,7 @@ func (g *grpcServer) preflightHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Infof("preflight request for %s", r.URL.Path)
 }
 
-func (g *grpcServer) dial(ctx context.Context, grpc_port *int) (*grpc.ClientConn, func()) {
+func dial(ctx context.Context, grpc_port *int) (*grpc.ClientConn, func()) {
 	for *grpc_port == 0 {
 		time.Sleep(time.Second * 1)
 	}
@@ -130,7 +131,7 @@ func (g *grpcServer) dial(ctx context.Context, grpc_port *int) (*grpc.ClientConn
 	}
 }
 
-func (g *grpcServer) runServer(ctx context.Context, f func(*grpc.Server)) {
+func runServer(ctx context.Context, f func(*grpc.Server)) {
 	opt := sys.GetOption()
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", *opt.GrpcPort))
 	if err != nil {
@@ -167,12 +168,43 @@ func (g *grpcServer) runServer(ctx context.Context, f func(*grpc.Server)) {
 	}
 }
 
-func (g *grpcServer) runServerAndGateway(f func(s *grpc.Server), handler ...func(ctx context.Context, mux *gwruntime.ServeMux, conn *grpc.ClientConn) error) {
+func runServerAndGateway(f func(s *grpc.Server), handler ...func(ctx context.Context, mux *gwruntime.ServeMux, conn *grpc.ClientConn) error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go g.runServer(ctx, f)
+	go runServer(ctx, f)
 	go consul.RegisterGrpcService()
-	g.runGateway(ctx, handler...)
+	runGateway(ctx, handler...)
+}
+
+
+
+type ConnClient struct {
+	Conn *grpc.ClientConn
+	Ctx  context.Context
+	Cf   context.CancelFunc
+}
+
+var consulAddress = ""
+
+func formatTarget(appid string) string {
+	if consulAddress == "" {
+		consulAddress = sys.GetOption().ConsulAddress
+	}
+	return fmt.Sprintf("consul://%s/%s", consulAddress, appid)
+}
+
+func GetConn(ctx context.Context, appid string) *grpc.ClientConn {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if _, has := md["X-Request-Id"]; !has {
+			glog.Warning("X-Request-Id is empty")
+		}
+	}
+
+	conn, err := grpc.DialContext(ctx, formatTarget(appid), grpc.WithBlock(), grpc.WithInsecure(), grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`))
+	if err != nil {
+		glog.Error(appid, err.Error())
+	}
+	return conn
 }
