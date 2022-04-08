@@ -11,13 +11,11 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/ppkg/microgo/utils"
 
-	"runtime"
-
 	"github.com/maybgit/glog"
 )
 
 var (
-	_opt         *Options
+	_opt          *Options
 	_globalConfig SystemGlobalConfig //consul kv
 )
 
@@ -43,7 +41,7 @@ type Options struct {
 	Tags []string
 	Mux  []gwruntime.ServeMuxOption
 
-	Ctx   context.Context
+	Ctx context.Context
 }
 
 func Init(o *Options) {
@@ -53,15 +51,13 @@ func Init(o *Options) {
 	o.XxljobPort = xxljobPort
 	o.XxljobAddress = *xxljobAddress
 
-	if o.ConsulAddress == "" {
-		if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
-			o.ConsulAddress = "127.0.0.1:8500"
+	if !IsLinux() {
+		o.ConsulAddress = "127.0.0.1:8500"
+	} else {
+		if *consulAddress != "" {
+			o.ConsulAddress = *consulAddress
 		} else {
-			if *consulAddress == "" {
-				panic("consul address is empty")
-			} else {
-				o.ConsulAddress = *consulAddress
-			}
+			panic("consul address empty")
 		}
 	}
 
