@@ -49,6 +49,8 @@ func GetDB(dsn string) *gorm.DB {
 	sqlDB.SetMaxOpenConns(100)
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(time.Hour)
-	db = db.Debug()
+	if sys.IsDebug() {
+		db = db.Debug()
+	}
 	return db
 }

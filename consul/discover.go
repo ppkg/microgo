@@ -59,8 +59,8 @@ func (c *consulResolver) start() {
 			// TODO 如果同一套服务没有在一台机上部署完整，此方式有问题
 			// 因此灰度的方式得改变，这里用简单的在一台机上部署所有依赖的服务
 			// 后期有需要不同的服务，需要在不同的机器上部署再做处理
-			if sys.GlobalConfig.HdRelease {
-				glog.Info("sys.GlobalConfig.HdRelease", sys.GlobalConfig.HdRelease)
+			if sys.IsHdRelease() {
+				glog.Info("sys.IsHdRelease", sys.IsHdRelease())
 				cfg := sys.GetOption()
 				for _, v := range rs.Addresses {
 					if strings.HasPrefix(v.Addr, cfg.LocalIP) {

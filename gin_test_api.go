@@ -10,20 +10,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"time"
 
 	"github.com/ppkg/microgo/utils"
 
 	"strconv"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
 var route *gin.Engine
+var auth string
 
-func InitGinTest(fn func(e *gin.Engine)) {
+func InitGinTest(token string, fn func(e *gin.Engine)) {
+	auth = token
 	route = gin.New()
 	route.Use(logger())
 	route.Use(recoverGin)
@@ -33,13 +33,13 @@ func InitGinTest(fn func(e *gin.Engine)) {
 func mapToValues(mp map[string]interface{}) url.Values {
 	v := url.Values{}
 	for key, val := range mp {
-		switch val.(type) {
+		switch t := val.(type) {
 		case int:
-			v.Add(key, strconv.Itoa(val.(int)))
+			v.Add(key, strconv.Itoa(t))
 		case float64:
-			v.Add(key, strconv.FormatFloat(val.(float64), 'E', -1, 64))
+			v.Add(key, strconv.FormatFloat(t, 'E', -1, 64))
 		case float32:
-			v.Add(key, strconv.FormatFloat(val.(float64), 'E', -1, 32))
+			v.Add(key, strconv.FormatFloat(float64(t), 'E', -1, 32))
 		default:
 			v.Add(key, val.(string))
 		}
@@ -73,20 +73,7 @@ func action(uri string, httpMethod string, contentType string, param map[string]
 		panic("error " + httpMethod)
 	}
 
-	claims := make(jwt.MapClaims)
-	// claims["AdminLoginInfo"] = params.AdminLoginInfo{
-	// 	Id:        1,
-	// 	Mobile:    "18018742084",
-	// 	Name:      "admin",
-	// 	LoginName: "admin",
-	// }
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-
-	// 生成jwt token
-	tokenStr, _ := token.SignedString("utils.PrivateKey") //TODO KEY
-
-	req.Header.Add("Authorization", "bearer "+tokenStr)
+	req.Header.Add("Authorization", "bearer "+auth)
 
 	var result *http.Response
 	if strings.HasPrefix(uri, "http") {

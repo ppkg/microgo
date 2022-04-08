@@ -18,11 +18,12 @@ import (
 
 var (
 	_opt         *Options
-	GlobalConfig SystemGlobalConfig //consul kv
+	_globalConfig SystemGlobalConfig //consul kv
 )
 
 type SystemGlobalConfig struct {
 	HdRelease bool //是否灰度
+	Debug     bool //调试模式
 }
 
 type Options struct {
@@ -42,7 +43,7 @@ type Options struct {
 	Tags []string
 	Mux  []gwruntime.ServeMuxOption
 
-	Ctx context.Context
+	Ctx   context.Context
 }
 
 func Init(o *Options) {
@@ -89,7 +90,7 @@ func Init(o *Options) {
 		sb.WriteString("\n")
 		glog.Info(sb.String())
 	}()
-	
+
 	initTracerProvider()
 	watchSystemGlobalConfig()
 }
@@ -122,8 +123,8 @@ func watchSystemGlobalConfig() {
 					if pair != nil {
 						lastIndex = meta.LastIndex
 						glog.Info("SystemGlobalConfig", string(pair.Value))
-						json.Unmarshal(pair.Value, &GlobalConfig)
-						glog.Info("GlobalConfig.HdRelease", GlobalConfig.HdRelease)
+						json.Unmarshal(pair.Value, &_globalConfig)
+						glog.Info("_globalConfig.HdRelease", _globalConfig.HdRelease)
 					} else {
 						glog.Error("SystemGlobalConfig pair nil")
 					}
