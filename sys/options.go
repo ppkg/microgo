@@ -56,7 +56,7 @@ func Init(o *Options) {
 	} else {
 		if *consulAddress != "" {
 			o.ConsulAddress = *consulAddress
-		} else {
+		} else if o.ConsulAddress == "" {
 			panic("consul address empty")
 		}
 	}
