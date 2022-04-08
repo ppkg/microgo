@@ -1,12 +1,16 @@
-package gin
+package microgo
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"runtime/debug"
 	"time"
 
 	"github.com/ppkg/microgo/consul"
 	"github.com/ppkg/microgo/sys"
+	"github.com/ppkg/microgo/utils"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/gin-contrib/cors"
@@ -16,7 +20,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func Run(route func(r *gin.RouterGroup), middleware ...gin.HandlerFunc) {
+func runGin(route func(r *gin.RouterGroup), middleware ...gin.HandlerFunc) {
 	opt := sys.GetOption()
 	ge := gin.New()
 
@@ -31,12 +35,12 @@ func Run(route func(r *gin.RouterGroup), middleware ...gin.HandlerFunc) {
 		ge.Use(otelgin.Middleware(opt.Name))
 	})
 	ge.Use(cors.New(config))
-	ge.Use(Recover)
-	ge.Use(PreHandler())
+	ge.Use(recoverGin)
+	ge.Use(preHandler())
 	for _, v := range middleware {
 		ge.Use(v)
 	}
-	ge.Use(Logger())
+	ge.Use(logger())
 
 	r := ge.Group("/" + opt.Name)
 	route(r)
@@ -69,4 +73,53 @@ func Run(route func(r *gin.RouterGroup), middleware ...gin.HandlerFunc) {
 			panic(err)
 		}
 	}
+}
+
+// 中间件忽略日志的路径
+var excludeLogPath = map[string]string{
+	"/ping":                                  "",
+	"/message-api/im/callback-after-message": "",
+}
+
+func preHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method == "POST" {
+			b, _ := ioutil.ReadAll(c.Request.Body)
+			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			c.Set("BodyBytes", b)
+		}
+	}
+}
+
+func logger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if _, has := excludeLogPath[c.Request.URL.Path]; !has {
+			start := time.Now()
+			c.Next()
+			end := time.Now()
+			loginName, _ := c.Get("LoginName")
+			var bodyString = ""
+			if c.Request.Method == "POST" {
+				if v, has := c.Get("BodyBytes"); has {
+					bodyString = string(v.([]byte))
+				}
+			}
+			glog.Info(c.Request.Header, loginName, c.Request.Method, c.Request.URL.Path, c.Writer.Status(), end.Sub(start), bodyString)
+		}
+	}
+}
+
+func recoverGin(c *gin.Context) {
+	defer func() {
+		if err := recover(); err != nil {
+			glog.Error(err)
+			glog.Error(string(debug.Stack()))
+			errStr := utils.ErrorToString(err)
+			c.JSON(400, gin.H{
+				"message": errStr,
+			})
+			c.Abort()
+		}
+	}()
+	c.Next()
 }

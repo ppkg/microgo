@@ -1,6 +1,6 @@
 // http testing
 // mayb 2019-07-02
-package gin
+package microgo
 
 import (
 	"bytes"
@@ -23,10 +23,10 @@ import (
 
 var route *gin.Engine
 
-func TestInit(fn func(e *gin.Engine)) {
+func InitGinTest(fn func(e *gin.Engine)) {
 	route = gin.New()
-	route.Use(Logger())
-	route.Use(Recover)
+	route.Use(logger())
+	route.Use(recoverGin)
 	fn(route)
 }
 

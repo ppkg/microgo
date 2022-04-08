@@ -28,8 +28,6 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-type grpcServer struct{}
-
 func runGateway(ctx context.Context, handler ...func(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error) {
 	opts := sys.GetOption()
 	ctx, cancel := context.WithCancel(ctx)
@@ -90,7 +88,7 @@ func allowCORS(h http.Handler) http.Handler {
 		if origin := r.Header.Get("Origin"); origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			if r.Method == "OPTIONS" && r.Header.Get("Access-Control-Request-Method") != "" {
-				g.preflightHandler(w, r)
+				preflightHandler(w, r)
 				return
 			}
 		}

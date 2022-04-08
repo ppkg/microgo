@@ -2,13 +2,14 @@ package sys
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/ppkg/microgo/utils"
-
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	consulapi "github.com/hashicorp/consul/api"
+	"github.com/ppkg/microgo/utils"
 
 	"runtime"
 
@@ -19,6 +20,10 @@ var (
 	_opt         *Options
 	GlobalConfig SystemGlobalConfig //consul kv
 )
+
+type SystemGlobalConfig struct {
+	HdRelease bool //是否灰度
+}
 
 type Options struct {
 	Name          string //service name
@@ -40,7 +45,7 @@ type Options struct {
 	Ctx context.Context
 }
 
-func Set(o *Options) {
+func Init(o *Options) {
 	o.GrpcPort = grpcPort
 	o.HttpPort = httpPort
 	o.PprofPort = pprofPort
@@ -84,13 +89,13 @@ func Set(o *Options) {
 		sb.WriteString("\n")
 		glog.Info(sb.String())
 	}()
-
+	
 	initTracerProvider()
-	// consul.RegisterPprof()
+	watchSystemGlobalConfig()
 }
 
 func (o *Options) Init() {
-	Set(o)
+	Init(o)
 }
 
 func GetOption() *Options {
@@ -99,4 +104,32 @@ func GetOption() *Options {
 		time.Sleep(time.Second)
 	}
 	return _opt
+}
+
+func watchSystemGlobalConfig() {
+	// watch 服务配置
+	go func() {
+		var lastIndex uint64
+		for {
+			opt := GetOption()
+			if client, err := consulapi.NewClient(&consulapi.Config{Address: opt.ConsulAddress, Scheme: "http"}); err != nil {
+				glog.Warning(err)
+			} else {
+				pair, meta, err := client.KV().Get("SystemGlobalConfig", &consulapi.QueryOptions{WaitIndex: lastIndex})
+				if err != nil {
+					glog.Error(err)
+				} else {
+					if pair != nil {
+						lastIndex = meta.LastIndex
+						glog.Info("SystemGlobalConfig", string(pair.Value))
+						json.Unmarshal(pair.Value, &GlobalConfig)
+						glog.Info("GlobalConfig.HdRelease", GlobalConfig.HdRelease)
+					} else {
+						glog.Error("SystemGlobalConfig pair nil")
+					}
+				}
+			}
+			time.Sleep(time.Second * 3)
+		}
+	}()
 }

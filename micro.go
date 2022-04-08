@@ -5,22 +5,22 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	ginfw "github.com/ppkg/microgo/gin"
+	"github.com/ppkg/microgo/consul"
 	"github.com/ppkg/microgo/sys"
 	"github.com/ppkg/microgo/xxljob"
 	"google.golang.org/grpc"
 )
 
-type Micro struct {}
+type Micro struct {
+	opt *sys.Options
+}
 
-func Init(opt *sys.Options) *Micro {
-	sys.Set(opt)
-	return &Micro{}
+func Init(o *sys.Options) *Micro {
+	sys.Init(o)
+	return &Micro{ opt: o }
 }
 
 func (s *Micro) Run(fn interface{}, middleware ...interface{}) {
-	go xxljob.Run()
-
 	var (
 		ginHandler  []gin.HandlerFunc
 		grpcHandler []func(ctx context.Context, mux *gwruntime.ServeMux, conn *grpc.ClientConn) error
@@ -35,9 +35,17 @@ func (s *Micro) Run(fn interface{}, middleware ...interface{}) {
 		}
 	}
 
+	if s.opt.XxljobAddress != "" {
+		go xxljob.Run()
+	}
+
+	if !s.opt.PprofDisable {
+		consul.RegisterPprof()
+	}
+
 	switch v := fn.(type) {
 	case func(r *gin.RouterGroup):
-		ginfw.Run(v, ginHandler...)
+		runGin(v, ginHandler...)
 	case func(s *grpc.Server):
 		runServerAndGateway(v, grpcHandler...)
 	}
