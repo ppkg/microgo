@@ -145,13 +145,23 @@ func runServer(ctx context.Context, f func(*grpc.Server)) {
 	if *opt.GrpcPort == 0 {
 		*opt.GrpcPort = l.Addr().(*net.TCPAddr).Port
 	}
-	s := grpc.NewServer(
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_recovery.UnaryServerInterceptor(),
-			otelgrpc.UnaryServerInterceptor(),
-		)),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-	)
+
+	var s *grpc.Server
+	if opt.JaegerEndpoint == "" {
+		s = grpc.NewServer(
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				grpc_recovery.UnaryServerInterceptor(),
+			)),
+		)
+	} else {
+		s = grpc.NewServer(
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				grpc_recovery.UnaryServerInterceptor(),
+				otelgrpc.UnaryServerInterceptor(),
+			)),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		)
+	}
 
 	f(s)
 
@@ -175,8 +185,6 @@ func runServerAndGateway(f func(s *grpc.Server), handler ...func(ctx context.Con
 	go consul.RegisterGrpcService()
 	runGateway(ctx, handler...)
 }
-
-
 
 type ConnClient struct {
 	Conn *grpc.ClientConn
