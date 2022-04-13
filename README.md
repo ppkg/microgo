@@ -9,7 +9,7 @@ func main() {
 
 	microgo.Init(&sys.Options{
 		Name:           "grpc-gin-empty",
-		JaegerEndpoint: "http://10.11.32.165:14268/api/traces",
+		ConsulAddress: "127.0.0.1:8500",
 	}).Run(func(r *gin.RouterGroup) {
 		r.GET("/test", api.Test)
 		r.POST("/test", api.Test)
@@ -27,7 +27,7 @@ func main() {
 
 	microgo.Init(&sys.Options{
 		Name:           "order-service",
-		JaegerEndpoint: "http://10.11.32.165:14268/api/traces",
+		ConsulAddress: "127.0.0.1:8500",
 	}).Run(func(s *grpc.Server) {
 		order.RegisterOrderServer(s, &services.Order{})
 	}, order.RegisterOrderHandler)
