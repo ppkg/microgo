@@ -45,11 +45,21 @@ type Options struct {
 }
 
 func Init(o *Options) {
-	o.GrpcPort = grpcPort
-	o.HttpPort = httpPort
-	o.PprofPort = pprofPort
-	o.XxljobPort = xxljobPort
-	o.XxljobAddress = *xxljobAddress
+	if o.GrpcPort == nil || *grpcPort > 0 {
+		o.GrpcPort = grpcPort
+	}
+	if o.HttpPort == nil || *httpPort > 0 {
+		o.HttpPort = httpPort
+	}
+	if o.PprofPort == nil || *pprofPort > 0 {
+		o.PprofPort = pprofPort
+	}
+	if o.XxljobPort == nil || *xxljobPort > 0 {
+		o.XxljobPort = xxljobPort
+	}
+	if *xxljobAddress != "" {
+		o.XxljobAddress = *xxljobAddress
+	}
 
 	if !IsLinux() {
 		o.ConsulAddress = "127.0.0.1:8500"
