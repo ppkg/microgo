@@ -43,6 +43,8 @@ func (t *taskList) Len() int {
 
 // Exists Key是否存在
 func (t *taskList) Exists(key string) bool {
+	t.mu.Lock()
 	_, ok := t.data[key]
+	t.mu.Unlock()
 	return ok
 }
