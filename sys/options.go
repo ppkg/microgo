@@ -38,6 +38,9 @@ type Options struct {
 
 	JaegerEndpoint string
 
+	//第一层路径名称，为空默认为service name
+	Path string
+
 	Tags []string
 	Mux  []gwruntime.ServeMuxOption
 
@@ -131,8 +134,6 @@ func watchSystemGlobalConfig() {
 						glog.Info("SystemGlobalConfig", string(pair.Value))
 						json.Unmarshal(pair.Value, &_globalConfig)
 						glog.Info("_globalConfig.HdRelease", _globalConfig.HdRelease)
-					} else {
-						glog.Error("SystemGlobalConfig pair nil")
 					}
 				}
 			}

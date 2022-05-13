@@ -42,10 +42,10 @@ func runGin(route func(r *gin.RouterGroup), middleware ...gin.HandlerFunc) {
 	}
 	ge.Use(logger())
 
-	r := ge.Group("/" + opt.Name)
+	r := ge.Group("/" + opt.Path)
 	route(r)
 
-	ge.GET(fmt.Sprintf("/%s/swagger/*any", opt.Name), ginSwagger.WrapHandler(swaggerFiles.Handler))
+	ge.GET(fmt.Sprintf("/%s/swagger/*any", opt.Path), ginSwagger.WrapHandler(swaggerFiles.Handler))
 	ge.GET("/ping", func(c *gin.Context) {
 		c.String(200, opt.Name)
 	})

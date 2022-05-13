@@ -2,6 +2,7 @@ package microgo
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -17,7 +18,11 @@ type Micro struct {
 
 func Init(o *sys.Options) *Micro {
 	sys.Init(o)
-	return &Micro{ opt: o }
+	o.Path = strings.Trim(o.Path, "/")
+	if o.Path == "" {
+		o.Path = o.Name
+	}
+	return &Micro{opt: o}
 }
 
 func (s *Micro) Run(fn interface{}, middleware ...interface{}) {
